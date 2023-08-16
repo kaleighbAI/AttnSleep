@@ -7,6 +7,7 @@ import os
 import numpy as np
 from glob import glob
 import math
+import sys
 
 def load_folds_data_shhs(np_data_path, n_folds):
     files = sorted(glob(os.path.join(np_data_path, "*.npz")))
@@ -22,18 +23,85 @@ def load_folds_data_shhs(np_data_path, n_folds):
     return folds_data
 
 def load_folds_data(np_data_path, n_folds):
-    files = sorted(glob(os.path.join(np_data_path, "*.npz")))
-    if "78" in np_data_path:
-        r_p_path = r"utils/r_permute_78.npy"
+    print(np_data_path) #prints /dataverse_files
+    
+    # Get the current directory of the script (utils directory)
+    #script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Go up one level to reach the larger directory
+    #larger_directory = os.path.dirname(script_dir)
+
+    # Construct the full path to the dataverse_files directory
+    #dataverse_files_path = os.path.join(larger_directory, "dataverse_files")
+
+    # Now you can use dataverse_files_path to access the folder
+    #print("Data directory:", dataverse_files_path)
+    
+    if not os.path.exists(np_data_path):
+        print(f"Data path '{np_data_path}' does not exist.")
+        sys.exit()
     else:
-        r_p_path = r"utils/r_permute_20.npy"
+        files = sorted(glob(os.path.join(np_data_path, "*.npz")))
+
+    '''
+    search_pattern = os.path.join(np_data_path, "*.npz")
+    matched_files = glob(search_pattern)
+    sorted_files = sorted(matched_files)
+    files = sorted_files
+    '''
+    print("Number of files:", len(files))
+    
+    ''' 
+    if "78" in np_data_path:
+    r_p_path = r"utils/r_permute_78.npy"
+    else:
+    r_p_path = r"utils/r_permute_20.npy"
+    '''
+    r_p_path = r"utils/r_permute_20.npy"
 
     if os.path.exists(r_p_path):
         r_permute = np.load(r_p_path)
     else:
         print ("============== ERROR =================")
 
+    print(type(r_permute))
+    array_length = len(r_permute)
+    print("Length of r_permute:", array_length)
+    print("rperm shape: ", r_permute.shape)
 
+    files_dict = dict()
+    for i in files:
+        file_name = os.path.split(i)[-1] 
+        file_num = file_name[3:5]
+        if file_num not in files_dict:
+            files_dict[file_num] = [i]
+        else:
+            files_dict[file_num].append(i)
+
+    files_pairs = list(files_dict.values())
+
+    # Shuffle the order of the groups based on r_permute
+    shuffled_indices = np.arange(len(files_pairs))
+    shuffled_indices = shuffled_indices[r_permute]
+    files_pairs = [files_pairs[i] for i in shuffled_indices]
+
+    # Continue with the rest of your code
+    train_files = [files_pairs[i] for i in range(n_folds)]  # Split the shuffled list into folds
+
+    folds_data = {}
+    for fold_id in range(n_folds):
+        subject_files = [item for sublist in train_files[fold_id] for item in sublist]
+        files_pairs2 = [item for sublist in files_pairs for item in sublist]
+        training_files = list(set(files_pairs2) - set(subject_files))
+        folds_data[fold_id] = [training_files, subject_files]
+
+    # Return the folds_data dictionary
+    return folds_data
+
+
+
+
+    '''
     files_dict = dict()
     for i in files:
         file_name = os.path.split(i)[-1] 
@@ -46,6 +114,7 @@ def load_folds_data(np_data_path, n_folds):
     for key in files_dict:
         files_pairs.append(files_dict[key])
     files_pairs = np.array(files_pairs)
+    print("fp shape: ", files_pairs.shape)
     files_pairs = files_pairs[r_permute]
 
     train_files = np.array_split(files_pairs, n_folds)
@@ -57,6 +126,7 @@ def load_folds_data(np_data_path, n_folds):
         training_files = list(set(files_pairs2) - set(subject_files))
         folds_data[fold_id] = [training_files, subject_files]
     return folds_data
+    '''
 
 
 def calc_class_weight(labels_count):

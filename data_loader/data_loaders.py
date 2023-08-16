@@ -9,15 +9,28 @@ class LoadDataset_from_numpy(Dataset):
         super(LoadDataset_from_numpy, self).__init__()
 
         # load files
+        print (np_dataset)
         X_train = np.load(np_dataset[0])["x"]
         y_train = np.load(np_dataset[0])["y"]
 
-        for np_file in np_dataset[1:]:
-            X_train = np.vstack((X_train, np.load(np_file)["x"]))
-            y_train = np.append(y_train, np.load(np_file)["y"])
+        print("Loading data from:", np_dataset[0])
+        print("X_train shape:", X_train.shape)
+        print("y_train shape:", y_train.shape)
 
-        self.len = X_train.shape[0]
-        self.x_data = torch.from_numpy(X_train)
+        for np_file in np_dataset[1:]:
+            try: 
+                X_train = np.vstack((X_train, np.load(np_file)["x"]))
+                y_train = np.append(y_train, np.load(np_file)["y"])
+
+                print("Loading data from:", np_file)
+                print("x_data shape:", X_train.shape)
+                print("y_data shape:", y_train.shape)
+
+            except FileNotFoundError as e:
+                print("Skipping file:", np_file, "- Error:", e)
+
+            self.len = X_train.shape[0]
+            self.x_data = torch.from_numpy(X_train)
         self.y_data = torch.from_numpy(y_train).long()
 
         # Correcting the shape of input to be (Batch_size, #channels, seq_len) where #channels=1

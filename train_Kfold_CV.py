@@ -49,9 +49,9 @@ def main(config, fold_id):
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
 
     optimizer = config.init_obj('optimizer', torch.optim, trainable_params)
-
+    #print("THE THING: ", folds_data[fold_id][1])
     data_loader, valid_data_loader, data_count = data_generator_np(folds_data[fold_id][0],
-                                                                   folds_data[fold_id][1], batch_size)
+                                                                   folds_data[fold_id][0], batch_size) #i chaneed it to 0 isntead of 1 here
     weights_for_each_class = calc_class_weight(data_count)
 
     trainer = Trainer(model, criterion, metrics, optimizer,
@@ -86,8 +86,10 @@ if __name__ == '__main__':
 
     config = ConfigParser.from_args(args, fold_id, options)
     if "shhs" in args2.np_data_dir:
-        folds_data = load_folds_data_shhs(args2.np_data_dir, config["data_loader"]["args"]["num_folds"])
+        print(args2.np_data_dir)
+        folds_data = load_folds_data_shhs(args2.np_data_dir, config["data_loader"]["args"]["num_folds"]) #// I commented this out 
+        #folds_data = args2.np_data_dir
     else:
-        folds_data = load_folds_data(args2.np_data_dir, config["data_loader"]["args"]["num_folds"])
-
+        folds_data = load_folds_data(args2.np_data_dir, config["data_loader"]["args"]["num_folds"]) #// I Commented this out
+        #folds_data = args2.np_data_dir
     main(config, fold_id)
